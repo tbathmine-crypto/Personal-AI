@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Personal AI Life Log Assistant{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    
+    <!-- Top Welcome Banner & Daily Auto Summary -->
+    <section class="dash-card summary-card glass-card span-full">
+        <div class="summary-header">
+            <div>
+                <span class="badge badge-accent">Daily AI Summary</span>
+                <h2>Hello, {{ user.username }} 👋</h2>
+            </div>
+            <div class="summary-actions">
+                <button id="btn-voice-summary" class="btn btn-secondary btn-glow">
+                    <i class="fa-solid fa-volume-high"></i> Listen Voice Summary
+                </button>
+            </div>
+        </div>
+
+        <div class="summary-body">
+            <p id="summary-text-display" class="summary-quote">
+                <i class="fa-solid fa-quote-left quote-icon"></i> 
+                {{ daily_summary }}
+            </p>
+            
+            <!-- gTTS Audio Player Container -->
+            <div id="audio-player-container" class="audio-container hidden">
+                <div class="audio-status">
+                    <i class="fa-solid fa-compact-disc fa-spin text-accent"></i>
+                    <span>Playing Voice Summary (gTTS Speech Output)</span>
+                </div>
+                <audio id="tts-audio-player" controls class="custom-audio-player">
+                    <source id="tts-audio-source" src="" type="audio/mpeg">
+                    Your browser does not support HTML5 audio.
+                </audio>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area: Entry Form & Search -->
+    <div class="dash-column-main">
+
+        <!-- Log Entry Card -->
+        <section class="dash-card glass-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-pen-to-square text-accent"></i> Quick Life Log</h3>
+                <span id="tamil-badge" class="badge badge-warning hidden">
+                    <i class="fa-solid fa-language"></i> Tamil Detected (Auto Translates)
+                </span>
+            </div>
+
+            <form id="entry-form" class="entry-form">
+                {% csrf_token %}
+                <div class="textarea-wrapper">
+                    <textarea id="entry-text" name="text" rows="3" class="form-input textarea-input" 
+                              placeholder="Type an entry (e.g. morning ate eggs, expense 70, or காலை உணவு சாப்பிட்டேன்)..." required></textarea>
+                    
+                    <!-- Voice Mic Recording Button -->
+                    <button type="button" id="btn-mic-input" class="btn-mic" title="Speak through Microphone (English / Tamil)">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
+
+                <div class="form-toolbar">
+                    <div class="voice-lang-select">
+                        <label for="mic-lang"><i class="fa-solid fa-globe"></i> Mic Lang:</label>
+                        <select id="mic-lang" class="select-sm">
+                            <option value="en-US">English (en-US)</option>
+                            <option value="ta-IN">Tamil (தமிழ் ta-IN)</option>
+                        </select>
+                        <span id="mic-status" class="mic-status-text"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-glow">
+                        <i class="fa-solid fa-paper-plane"></i> Save Entry
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Search & Natural Language Query Card -->
+        <section class="dash-card glass-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-magnifying-glass-chart text-accent"></i> AI Search & Natural Language Query</h3>
+            </div>
+
+            <div class="search-box-wrapper">
+                <input type="text" id="search-query" class="form-input search-input" 
+                       placeholder="Ask questions (e.g. what did I eat today, total expense this week, spent, food)...">
+                <button type="button" id="btn-search" class="btn btn-secondary">
+                    <i class="fa-solid fa-magnifying-glass"></i> Query
+                </button>
+            </div>
+
+            <div class="quick-query-pills">
+                <span class="pill-label">Try asking:</span>
+                <button class="query-pill" data-query="what did I eat today">what did I eat today</button>
+                <button class="query-pill" data-query="total expense this week">total expense this week</button>
+                <button class="query-pill" data-query="show my tasks">show my tasks</button>
+                <button class="query-pill" data-query="events today">events today</button>
+            </div>
+
+            <!-- Search Results Display -->
+            <div id="search-results-container" class="search-results hidden">
+                <div class="search-results-header">
+                    <span id="search-summary-msg" class="search-summary-text"></span>
+                    <button id="btn-clear-search" class="btn btn-ghost btn-xs">Clear Search</button>
+                </div>
+                <div id="search-entries-list" class="entries-feed"></div>
+            </div>
+        </section>
+
+        <!-- Logged Entries Feed -->
+        <section class="dash-card glass-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-list-check text-accent"></i> Recent Activity Logs</h3>
+                <span class="count-badge" id="entries-count-badge">{{ entries|length }} logged</span>
+            </div>
+
+            <div id="entries-list" class="entries-feed">
+                {% if entries %}
+                    {% for entry in entries %}
+                        <div class="entry-item card-hover" data-category="{{ entry.category }}">
+                            <div class="entry-meta">
+                                <span class="badge category-badge category-{{ entry.category|lower }}">
+                                    {% if entry.category == 'Food' %}<i class="fa-solid fa-utensils"></i>
+                                    {% elif entry.category == 'Expense' %}<i class="fa-solid fa-wallet"></i>
+                                    {% elif entry.category == 'Task' %}<i class="fa-solid fa-check-double"></i>
+                                    {% elif entry.category == 'Event' %}<i class="fa-solid fa-calendar-star"></i>
+                                    {% else %}<i class="fa-solid fa-bookmark"></i>{% endif %}
+                                    {{ entry.category }}
+                                </span>
+                                <span class="entry-time"><i class="fa-regular fa-clock"></i> {{ entry.timestamp|date:"M d, Y h:i A" }}</span>
+                            </div>
+                            
+                            <div class="entry-content">
+                                <p class="entry-text">{{ entry.text }}</p>
+                                {% if entry.translated_text and entry.original_language == 'ta' %}
+                                    <div class="translation-box">
+                                        <small><i class="fa-solid fa-language"></i> Translated to English:</small>
+                                        <p class="translated-text">{{ entry.translated_text }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state" id="empty-state-msg">
+                        <i class="fa-solid fa-folder-open empty-icon"></i>
+                        <p>No entries logged yet. Type something above or speak through the microphone to create your first entry!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Sidebar Column: Reminders & Category Quick Stats -->
+    <aside class="dash-column-side">
+
+        <!-- Email Reminder Card -->
+        <section class="dash-card glass-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-bell text-accent"></i> Daily Email Reminder</h3>
+            </div>
+
+            <p class="card-desc">Set a time (e.g. 5:00 PM) to receive an automated daily summary email.</p>
+
+            <form id="reminder-form" class="reminder-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="reminder-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                    <input type="email" id="reminder-email" name="email" class="form-input" 
+                           value="{{ user_reminder.email|default:user.email }}" placeholder="your@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reminder-time"><i class="fa-regular fa-clock"></i> Reminder Time</label>
+                    <input type="time" id="reminder-time" name="reminder_time" class="form-input" 
+                           value="{{ user_reminder.reminder_time|time:'H:i'|default:'17:00' }}" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-glow">
+                    <i class="fa-solid fa-calendar-check"></i> Set Reminder
+                </button>
+            </form>
+
+            <div id="reminder-status" class="alert alert-info hidden margin-top-sm"></div>
+        </section>
+
+        <!-- Categories Legend Card -->
+        <section class="dash-card glass-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-tags text-accent"></i> Smart Tags Legend</h3>
+            </div>
+
+            <ul class="legend-list">
+                <li>
+                    <span class="badge category-badge category-food"><i class="fa-solid fa-utensils"></i> Food</span>
+                    <span class="legend-desc">ate, food, lunch, coffee...</span>
+                </li>
+                <li>
+                    <span class="badge category-badge category-expense"><i class="fa-solid fa-wallet"></i> Expense</span>
+                    <span class="legend-desc">spent, cost, rupees, $...</span>
+                </li>
+                <li>
+                    <span class="badge category-badge category-task"><i class="fa-solid fa-check-double"></i> Task</span>
+                    <span class="legend-desc">todo, meeting, call, finish...</span>
+                </li>
+                <li>
+                    <span class="badge category-badge category-event"><i class="fa-solid fa-calendar-star"></i> Event</span>
+                    <span class="legend-desc">played, party, movie, went...</span>
+                </li>
+            </ul>
+        </section>
+
+    </aside>
+
+</div>
+{% endblock %}

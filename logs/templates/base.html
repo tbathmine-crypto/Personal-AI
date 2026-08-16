@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Personal AI Life Log Assistant{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="app-background"></div>
+    
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="{% url 'dashboard' %}" class="brand-logo">
+                <i class="fa-solid fa-brain-circuit brand-icon"></i>
+                <span class="brand-text">LifeLog<span class="accent-text">.AI</span></span>
+            </a>
+            
+            <nav class="nav-links">
+                {% if user.is_authenticated %}
+                    <span class="user-pill">
+                        <i class="fa-regular fa-user-circle"></i> {{ user.username }}
+                    </span>
+                    <a href="{% url 'logout' %}" class="btn btn-outline btn-sm">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Login</a>
+                    <a href="{% url 'signup' %}" class="btn btn-primary btn-sm">Sign Up</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        <i class="fa-solid fa-circle-info"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <p>&copy; {% now "Y" %} Personal AI Life Log Assistant. Bilingual Tamil & English Smart Logging.</p>
+        </div>
+    </footer>
+
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
