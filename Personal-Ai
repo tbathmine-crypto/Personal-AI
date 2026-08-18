@@ -1,0 +1,88 @@
+# Personal AI Life-Log Assistant
+
+A full-stack Django web application that lets users log daily activities, expenses, and tasks through text or voice input. The app auto-categorizes entries, supports Tamil-English bilingual input, and replies with a spoken voice summary.
+
+## Features
+
+- **User Authentication** – Signup, login, logout using Django's built-in auth system
+- **Smart Categorization** – Keyword-based scoring logic auto-tags entries into Food, Expense, Task, Event, or General
+- **Bilingual Support (Tamil + English)** – Detects Tamil text and translates it to English using Google Translate API
+- **Voice Reply** – Converts daily summaries into speech using gTTS (Google Text-to-Speech)
+- **Voice Input** – Users can speak entries using the browser's Web Speech API
+- **Natural Language Search** – Query past entries, e.g. "what did I eat today" or "total expense this week"
+- **Auto Daily Summary** – Generates a one-line summary of the day's logged entries
+- **Email Reminders** – Background scheduler sends daily reminder emails at a user-set time
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Python, Django |
+| Frontend | HTML, CSS, JavaScript |
+| Database | SQLite |
+| Voice Output | gTTS |
+| Voice Input | Web Speech API |
+| Translation | deep_translator (Google Translate API) |
+| Scheduling | Python `schedule` + `threading` |
+
+## Project Structure
+
+```
+personal_ai_assistant/
+├── life_log_project/       # Django project settings, URLs
+├── logs/                   # Main app
+│   ├── models.py           # Entry and Reminder models
+│   ├── views.py            # View logic
+│   ├── urls.py              # App URL routing
+│   ├── utils/
+│   │   ├── categorizer.py  # Keyword-based category scoring
+│   │   ├── translator.py   # Tamil detection + translation
+│   │   ├── voice.py        # gTTS voice summary generation
+│   │   └── scheduler.py    # Background email reminder scheduler
+│   ├── templates/          # HTML pages (dashboard, login, signup)
+│   └── static/              # CSS and JS files
+├── media/audio/            # Generated voice summary MP3 files
+├── manage.py
+└── db.sqlite3
+```
+
+## How It Works
+
+1. User logs in and types (or speaks) an entry, e.g. "morning: ate eggs" or "expense: 70"
+2. If the entry is in Tamil, it's translated to English for processing
+3. The categorizer scores the entry against keyword dictionaries and assigns a category
+4. Entry is saved to the database with a timestamp
+5. User can search past entries using natural language queries
+6. A daily summary is generated and can be played back as voice using gTTS
+7. If a reminder is set, the background scheduler sends an email at the specified time
+
+## Setup & Run Locally
+
+```bash
+git clone <your-repo-url>
+cd personal_ai_assistant
+
+python -m venv venv
+venv\Scripts\activate      # Windows
+source venv/bin/activate   # Mac/Linux
+
+pip install django gtts deep-translator schedule
+
+python manage.py migrate
+
+python manage.py createsuperuser
+
+python manage.py runserver
+```
+
+Visit `http://127.0.0.1:8000/` in your browser.
+
+## Notes
+
+- Email reminders use Django's console backend for local testing (emails print to terminal, not sent to a real inbox). Switch to an SMTP backend for production use.
+- Translation and voice features require an active internet connection.
+- `DEBUG = True` and a hardcoded `SECRET_KEY` are used for local development only — not suitable for production deployment.
+
+## Author
+
+Deepak
